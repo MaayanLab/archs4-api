@@ -1,0 +1,10 @@
+aiohttp
+click
+h5py
+jinja2-cli
+numpy
+pandas
+python-dotenv
+rororo
+s3fs
+supervisor

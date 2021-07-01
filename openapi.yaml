@@ -1,0 +1,183 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: ARCHS4 Data API
+  description: An API for grabbing subsets of the ARCHS4 data file.
+  # termsOfService:
+  contact:
+    name: Ma'ayan Lab
+    # email: 
+    url: https://maayanlab.cloud/
+  license:
+    name: CC-BY-NC-SA
+    url: https://github.com/MaayanLab/archs4-api/blob/main/LICENSE
+servers:
+  - url: /
+paths:
+  /:
+    get:
+      description: |
+        This openapi spec, visit /ui for UI version.
+      operationId: openapi
+      responses:
+        '200':
+          description: success
+          content:
+            application/json:
+              schema:
+                type: object
+  /openapi.json:
+    get:
+      description: |
+        This openapi spec, visit /ui for UI version.
+      operationId: openapi.json
+      responses:
+        '200':
+          description: success
+          content:
+            application/json:
+              schema:
+                type: object
+  /openapi.yaml:
+    get:
+      description: |
+        This openapi spec, visit /ui for UI version.
+      operationId: openapi.yaml
+      responses:
+        '200':
+          description: success
+          content:
+            application/x-yaml:
+              schema:
+                type: string
+            text/yaml:
+              schema:
+                type: string
+  /data/expression:
+    post:
+      description: |
+        Returns sample data from the ARCHS4 Matrix. Max 100 at a time
+      operationId: fetch_data_expression
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                geo_accession:
+                  description: GEO Accessions to get the Data for
+                  type: array
+                  items:
+                    type: string
+                genes:
+                  description: A set of specific genes to select
+                  type: array
+                  items:
+                    type: string
+              required:
+                - geo_accession
+            example:
+              geo_accession: ["GSM4615036"]
+              genes: ["ACE2"]
+      responses:
+        '200':
+          description: |
+            Object of the form {sample: {gene: expression, ...}, ...}
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+                  additionalProperties:
+                    type: integer
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /meta/samples/geo_accession:
+    get:
+      description: |
+        Returns sample meta data from the ARCHS4 Matrix.
+      operationId: fetch_meta_samples_geo_accession
+      parameters:
+        - in: query
+          name: skip
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 100
+            minimum: 1
+            maximum: 10000
+      responses:
+        '200':
+          description: |
+            List of geo_accession ids
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /meta/genes/gene_symbol:
+    get:
+      description: |
+        Returns sample meta data from the ARCHS4 Matrix.
+      operationId: fetch_meta_genes_gene_symbol
+      parameters:
+        - in: query
+          name: skip
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 100
+            minimum: 1
+            maximum: 10000
+      responses:
+        '200':
+          description: |
+            List of gene_symbol ids
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
