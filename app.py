@@ -37,6 +37,11 @@ async def s3_ctx(app):
   logger.info('Ready.')
   yield
 
+def serve_mimetype(df, accept=''):
+  if accept.startswith('text/tab-separated-values'):
+    return web.Response(text=df.to_csv(sep='\t'), content_type='text/tab-separated-values')
+  else:
+    return web.Response(text=df.to_json(), content_type='application/json')
 
 ## ROUTES ##
 
@@ -75,7 +80,7 @@ async def fetch_data_expression(request):
     index=data.genes[gene_filter],
     columns=data.geo_accession[sample_filter],
   )
-  return web.json_response(ret.to_dict())
+  return serve_mimetype(ret, accept=request.headers.get('Accept', 'application/json'))
 
 @operations.register
 async def fetch_meta_genes_gene_symbol(request):

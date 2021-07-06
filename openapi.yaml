@@ -92,6 +92,9 @@ paths:
                   type: object
                   additionalProperties:
                     type: integer
+            text/tab-separated-values:
+              schema:
+                type: string
         default:
           description: unexpected error
           content:
