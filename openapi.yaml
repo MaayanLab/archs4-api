@@ -114,6 +114,10 @@ paths:
       operationId: fetch_meta_samples_geo_accession
       parameters:
         - in: query
+          name: q
+          schema:
+            type: string
+        - in: query
           name: skip
           schema:
             type: integer
@@ -136,6 +140,17 @@ paths:
                 type: array
                 items:
                   type: string
+          headers:
+            Content-Range:
+              schema:
+                type: string
+                example: 0-100/2000
+        '404':
+          description: Query resulted in an empty list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         default:
           description: unexpected error
           content:
@@ -148,6 +163,10 @@ paths:
         Returns sample meta data from the ARCHS4 Matrix.
       operationId: fetch_meta_genes_gene_symbol
       parameters:
+        - in: query
+          name: q
+          schema:
+            type: string
         - in: query
           name: skip
           schema:
@@ -171,6 +190,17 @@ paths:
                 type: array
                 items:
                   type: string
+          headers:
+            Content-Range:
+              schema:
+                type: string
+                example: 0-100/2000
+        '404':
+          description: Query resulted in an empty list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         default:
           description: unexpected error
           content:

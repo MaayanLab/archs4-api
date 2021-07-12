@@ -91,19 +91,31 @@ async def fetch_data_expression(request):
 async def fetch_meta_genes_gene_symbol(request):
   ctx = rororo.get_openapi_context(request)
   data = request.app['data']
-  #
+  q = ctx.parameters.query.get('q')
   skip, limit = ctx.parameters.query['skip'], ctx.parameters.query['limit']
-  ret = list(data.genes[skip:skip+limit])
-  return web.json_response(ret)
+  arr = data.genes
+  if q:
+    arr = arr[np.where(np.char.find(arr, q) >= 0)]
+  content_range = f"{skip}-{min(skip+limit, arr.size)}/{arr.size}"
+  arr = arr[skip:skip+limit]
+  if arr.size == 0:
+    raise web.HTTPNotFound(reason='Query resulted in empty result set')
+  return web.json_response(list(arr), headers={'Content-Range': content_range})
 
 @operations.register
 async def fetch_meta_samples_geo_accession(request):
   ctx = rororo.get_openapi_context(request)
   data = request.app['data']
-  #
+  q = ctx.parameters.query.get('q')
   skip, limit = ctx.parameters.query['skip'], ctx.parameters.query['limit']
-  ret = list(data.geo_accession[skip:skip+limit])
-  return web.json_response(ret)
+  arr = data.geo_accession
+  if q:
+    arr = arr[np.where(np.char.find(arr, q) >= 0)]
+  content_range = f"{skip}-{min(skip+limit, arr.size)}/{arr.size}"
+  arr = arr[skip:skip+limit]
+  if arr.size == 0:
+    raise web.HTTPNotFound(reason='Query resulted in empty result set')
+  return web.json_response(list(arr), headers={'Content-Range': content_range})
 
 
 ## CLI ##
