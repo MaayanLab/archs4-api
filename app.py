@@ -75,6 +75,11 @@ async def fetch_data_expression(request):
   assert len(geo_accession) <= 100, 'Max 100 samples can be processed at a time'
   sample_filter, = np.where(np.in1d(data.geo_accession, geo_accession))
   #
+  if isinstance(gene_filter, np.ndarray) and gene_filter.size == 0:
+    raise web.HTTPNotFound(reason='No genes provided found in ARCHS4')
+  if sample_filter.size == 0:
+    raise web.HTTPNotFound(reason='No samples provided found in ARCHS4')
+  #
   ret = pd.DataFrame(
     data.expr[:, sample_filter][gene_filter],
     index=data.genes[gene_filter],

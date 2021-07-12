@@ -95,6 +95,12 @@ paths:
             text/tab-separated-values:
               schema:
                 type: string
+        '404':
+          description: Query resulted in an empty matrix because of missing samples/genes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         default:
           description: unexpected error
           content:
