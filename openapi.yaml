@@ -115,6 +115,7 @@ paths:
       parameters:
         - in: query
           name: q
+          description: String to filter samples by
           schema:
             type: string
         - in: query
@@ -160,11 +161,12 @@ paths:
   /meta/genes/gene_symbol:
     get:
       description: |
-        Returns sample meta data from the ARCHS4 Matrix.
+        Returns gene symbols from the ARCHS4 Matrix.
       operationId: fetch_meta_genes_gene_symbol
       parameters:
         - in: query
           name: q
+          description: String to filter genes by
           schema:
             type: string
         - in: query
