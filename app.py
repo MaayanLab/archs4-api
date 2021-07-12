@@ -28,11 +28,28 @@ async def s3_ctx(app):
   logger = logging.getLogger('s3_ctx')
   logger.info('Setting up h5py over s3...')
   df = load_h5(app['config']['matrix'])
+  expr = df['data']['expression']
+  genes = bytes_decode(df['meta']['genes']['gene_symbol'])
+  series_id = bytes_decode(df['meta']['samples']['series_id'])
+  geo_accession = bytes_decode(df['meta']['samples']['geo_accession'])
+  #
+  series_geo_accessions = {}
+  for s, a in zip(series_id, geo_accession):
+    for ss in s.split('\t'):
+      if ss not in series_geo_accessions: series_geo_accessions[ss] = []
+      series_geo_accessions[ss].append(a)
+  series_geo_accessions = {
+    s: np.array(a)
+    for s, a in series_geo_accessions.items()
+  }
+  series_id = np.array(list(series_geo_accessions.keys()))
+  #
   app['data'] = type('data', tuple(), dict(
-    expr=df['data']['expression'],
-    genes=bytes_decode(df['meta']['genes']['gene_symbol']),
-    series=bytes_decode(df['meta']['samples']['series_id']),
-    geo_accession=bytes_decode(df['meta']['samples']['geo_accession']),
+    expr=expr,
+    genes=genes,
+    geo_accession=geo_accession,
+    series_id=series_id,
+    series_geo_accessions=series_geo_accessions,
   ))
   logger.info('Ready.')
   yield
@@ -91,11 +108,10 @@ async def fetch_data_expression(request):
 async def fetch_meta_genes_gene_symbol(request):
   ctx = rororo.get_openapi_context(request)
   data = request.app['data']
-  q = ctx.parameters.query.get('q')
-  skip, limit = ctx.parameters.query['skip'], ctx.parameters.query['limit']
   arr = data.genes
-  if q:
-    arr = arr[np.where(np.char.find(arr, q) >= 0)]
+  q = ctx.parameters.query.get('q')
+  if q: arr = arr[np.char.find(arr, q) >= 0]
+  skip, limit = ctx.parameters.query['skip'], ctx.parameters.query['limit']
   content_range = f"{skip}-{min(skip+limit, arr.size)}/{arr.size}"
   arr = arr[skip:skip+limit]
   if arr.size == 0:
@@ -106,11 +122,29 @@ async def fetch_meta_genes_gene_symbol(request):
 async def fetch_meta_samples_geo_accession(request):
   ctx = rororo.get_openapi_context(request)
   data = request.app['data']
+  series_id = ctx.parameters.query.get('series_id')
+  if series_id:
+    if series_id not in data.series_geo_accessions:
+      raise web.HTTPNotFound(reason='series_id not found')
+    arr = data.series_geo_accessions[series_id]
+  else: arr = data.geo_accession
   q = ctx.parameters.query.get('q')
+  if q: arr = arr[np.char.find(arr, q) >= 0]
   skip, limit = ctx.parameters.query['skip'], ctx.parameters.query['limit']
-  arr = data.geo_accession
-  if q:
-    arr = arr[np.where(np.char.find(arr, q) >= 0)]
+  content_range = f"{skip}-{min(skip+limit, arr.size)}/{arr.size}"
+  arr = arr[skip:skip+limit]
+  if arr.size == 0:
+    raise web.HTTPNotFound(reason='Query resulted in empty result set')
+  return web.json_response(list(arr), headers={'Content-Range': content_range})
+
+@operations.register
+async def fetch_meta_samples_series_id(request):
+  ctx = rororo.get_openapi_context(request)
+  data = request.app['data']
+  arr = data.series_id
+  q = ctx.parameters.query.get('q')
+  if q: arr = arr[np.char.find(arr, q) >= 0]
+  skip, limit = ctx.parameters.query['skip'], ctx.parameters.query['limit']
   content_range = f"{skip}-{min(skip+limit, arr.size)}/{arr.size}"
   arr = arr[skip:skip+limit]
   if arr.size == 0:

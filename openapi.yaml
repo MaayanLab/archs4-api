@@ -110,12 +110,17 @@ paths:
   /meta/samples/geo_accession:
     get:
       description: |
-        Returns sample meta data from the ARCHS4 Matrix.
+        Returns sample geo accession ids from the ARCHS4 Matrix.
       operationId: fetch_meta_samples_geo_accession
       parameters:
         - in: query
           name: q
           description: String to filter samples by
+          schema:
+            type: string
+        - in: query
+          name: series_id
+          description: Filter samples contained in this series_id
           schema:
             type: string
         - in: query
@@ -186,6 +191,57 @@ paths:
         '200':
           description: |
             List of gene_symbol ids
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+          headers:
+            Content-Range:
+              schema:
+                type: string
+                example: 0-100/2000
+        '404':
+          description: Query resulted in an empty list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /meta/samples/series_id:
+    get:
+      description: |
+        Returns study identifiers from the ARCHS4 Matrix.
+      operationId: fetch_meta_samples_series_id
+      parameters:
+        - in: query
+          name: q
+          description: String to filter studies by
+          schema:
+            type: string
+        - in: query
+          name: skip
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 100
+            minimum: 1
+            maximum: 10000
+      responses:
+        '200':
+          description: |
+            List of geo_accession ids
           content:
             application/json:
               schema:
