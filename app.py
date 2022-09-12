@@ -7,6 +7,9 @@ from pathlib import Path
 from aiohttp import web
 
 
+# TODO: h5 ops in a dedicated thread otherwise it's likely to block the event loop
+#        affecting concurrent requests
+
 ## Utils ##
 
 bytes_decode = np.vectorize(bytes.decode)
@@ -103,6 +106,34 @@ async def fetch_data_expression(request):
     columns=data.geo_accession[sample_filter],
   )
   return serve_mimetype(ret, accept=request.headers.get('Accept', 'application/json'))
+
+@operations.register
+async def fetch_data_expression_transpose(request):
+  ctx = rororo.get_openapi_context(request)
+  data = request.app['data']
+  #
+  if ctx.data.get('genes'):
+    gene_filter, = np.where(np.in1d(data.genes, ensure_list(ctx.data['genes'])))
+  else:
+    gene_filter = slice(None)
+  #
+  geo_accession = ensure_list(ctx.data['geo_accession'])
+  sample_filter, = np.where(np.in1d(data.geo_accession, geo_accession))
+  #
+  if isinstance(gene_filter, np.ndarray) and gene_filter.size == 0:
+    raise web.HTTPNotFound(reason='No genes provided found in ARCHS4')
+  if sample_filter.size == 0:
+    raise web.HTTPNotFound(reason='No samples provided found in ARCHS4')
+  #
+  columns = ['sample', *data.genes[gene_filter]]
+  stream = web.StreamResponse()
+  stream.headers.add('Content-Type', 'text/tsv')
+  await stream.prepare(request)
+  await stream.write(('\t'.join(columns) + '\n').encode())
+  for i, sample in zip(sample_filter, data.geo_accession[sample_filter]):
+    await stream.write(('\t'.join([sample] + [f"{v:g}" for v in data.expr[:, i][gene_filter]]) + '\n').encode())
+  await stream.write_eof()
+  return stream
 
 @operations.register
 async def fetch_meta_genes_gene_symbol(request):

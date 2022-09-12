@@ -107,6 +107,56 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /data/expression/T:
+    post:
+      description: |
+        Returns sample data from the ARCHS4 Matrix transposed, streaming
+      operationId: fetch_data_expression_transpose
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                geo_accession:
+                  description: GEO Accessions to get the Data for
+                  type: array
+                  items:
+                    type: string
+                genes:
+                  description: A set of specific genes to select
+                  type: array
+                  items:
+                    type: string
+              required:
+                - geo_accession
+            example:
+              geo_accession: ["GSM4615036"]
+              genes: ["ACE2"]
+      responses:
+        '200':
+          description: |
+            TSV of the form:
+                  \t gene1      \t gene2      \t ...\n
+            GSE1  \t expression \t ...        \t ...\n
+            ...
+          content:
+            text/tab-separated-values:
+              schema:
+                type: string
+        '404':
+          description: Query resulted in an empty matrix because of missing samples/genes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /meta/samples/geo_accession:
     get:
       description: |
