@@ -3,6 +3,7 @@ click
 h5py
 jinja2-cli
 numpy
+openapi-spec-validator==0.4.0
 pandas
 python-dotenv
 rororo
