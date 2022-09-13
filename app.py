@@ -127,7 +127,7 @@ async def fetch_data_expression_transpose(request):
   #
   columns = ['sample', *data.genes[gene_filter]]
   stream = web.StreamResponse()
-  stream.headers.add('Content-Type', 'text/tsv')
+  stream.headers.add('Content-Type', 'text/tab-separated-values')
   await stream.prepare(request)
   await stream.write(('\t'.join(columns) + '\n').encode())
   for i, sample in zip(sample_filter, data.geo_accession[sample_filter]):
