@@ -27,10 +27,8 @@ def load_h5(uri):
   else:
     return h5py.File(uri)
 
-async def s3_ctx(app):
-  logger = logging.getLogger('s3_ctx')
-  logger.info('Setting up h5py over s3...')
-  df = load_h5(app['config']['matrix'])
+def load_data(mat):
+  df = load_h5(mat)
   expr = df['data']['expression']
   genes = bytes_decode(df['meta']['genes']['gene_symbol'])
   series_id = bytes_decode(df['meta']['samples']['series_id'])
@@ -47,13 +45,18 @@ async def s3_ctx(app):
   }
   series_id = np.array(list(series_geo_accessions.keys()))
   #
-  app['data'] = type('data', tuple(), dict(
+  return type('data', tuple(), dict(
     expr=expr,
     genes=genes,
     geo_accession=geo_accession,
     series_id=series_id,
     series_geo_accessions=series_geo_accessions,
   ))
+
+async def s3_ctx(app):
+  logger = logging.getLogger('s3_ctx')
+  logger.info('Setting up h5py over s3...')
+  app['data'] = load_data(app['config']['matrix'])
   logger.info('Ready.')
   yield
 
